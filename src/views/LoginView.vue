@@ -2,6 +2,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores'
+import BaseInput from '@/components/BaseInput.vue'
 import type { LoginForm } from '@/types'
 
 const router = useRouter()
@@ -42,46 +43,50 @@ async function handleSubmit(): Promise<void> {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-gray-50">
+  <div class="flex min-h-screen items-center justify-center bg-gray-100 px-4">
     <div class="w-full max-w-md rounded-2xl bg-white p-8 shadow-md">
-      <h1 class="mb-2 text-center text-2xl font-bold text-gray-800">帳號管理系統</h1>
-      <p class="mb-8 text-center text-sm text-gray-400">請登入以繼續</p>
-
-      <form @submit.prevent="handleSubmit" novalidate>
-        <!-- Email -->
-        <div class="mb-4">
-          <label for="email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
-          <input
-            id="email"
-            v-model="form.email"
-            type="email"
-            placeholder="example@email.com"
-            autocomplete="email"
-            class="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-blue-500"
-            :class="errors.email ? 'border-red-400 bg-red-50' : 'border-gray-300'"
-          />
-          <p v-if="errors.email" class="mt-1 text-xs text-red-500">{{ errors.email }}</p>
+      <!-- Header -->
+      <div class="mb-8 flex flex-col items-center gap-3">
+        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500">
+          <svg class="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+          </svg>
         </div>
-
-        <!-- Password -->
-        <div class="mb-7">
-          <label for="password" class="mb-1 block text-sm font-medium text-gray-700">密碼</label>
-          <input
-            id="password"
-            v-model="form.password"
-            type="password"
-            placeholder="請輸入密碼"
-            autocomplete="current-password"
-            class="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-blue-500"
-            :class="errors.password ? 'border-red-400 bg-red-50' : 'border-gray-300'"
-          />
-          <p v-if="errors.password" class="mt-1 text-xs text-red-500">{{ errors.password }}</p>
+        <div class="text-center">
+          <h1 class="text-2xl font-bold text-gray-900">帳號管理系統</h1>
+          <p class="mt-1 text-sm text-gray-400">請登入以繼續</p>
         </div>
+      </div>
+
+      <form @submit.prevent="handleSubmit" novalidate class="space-y-4">
+        <!-- Email — uses BaseInput (defineModel) -->
+        <BaseInput
+          id="login-email"
+          v-model="form.email"
+          type="email"
+          label="Email"
+          placeholder="example@email.com"
+          autocomplete="email"
+          :error="errors.email"
+          :disabled="isSubmitting"
+        />
+
+        <!-- Password — uses BaseInput (defineModel) -->
+        <BaseInput
+          id="login-password"
+          v-model="form.password"
+          type="password"
+          label="密碼"
+          placeholder="請輸入密碼"
+          autocomplete="current-password"
+          :error="errors.password"
+          :disabled="isSubmitting"
+        />
 
         <button
           type="submit"
           :disabled="isSubmitting"
-          class="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+          class="mt-2 w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 active:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {{ isSubmitting ? '登入中...' : '登入' }}
         </button>

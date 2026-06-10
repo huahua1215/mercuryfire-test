@@ -2,6 +2,7 @@
 import { reactive, watch } from 'vue'
 import { RoleLevel, AccountStatus } from '@/types'
 import type { Account, AccountFormDto } from '@/types'
+import BaseInput from '@/components/BaseInput.vue'
 
 const props = defineProps<{
   account: Account | null
@@ -23,7 +24,7 @@ const form = reactive<AccountFormDto>({
 
 const errors = reactive({ name: '', email: '' })
 
-// 編輯模式時把現有資料填入表單
+// 編輯模式：把現有資料填入表單
 watch(
   () => props.account,
   (account) => {
@@ -60,12 +61,24 @@ function handleSubmit(): void {
   if (!validate()) return
   emit('submit', { ...form })
 }
+
+const roleLevelOptions = [
+  { value: RoleLevel.ADMIN, label: '管理員' },
+  { value: RoleLevel.EDITOR, label: '編輯' },
+  { value: RoleLevel.USER, label: '用戶' },
+  { value: RoleLevel.CLIENT, label: '客戶' },
+]
+
+const statusOptions = [
+  { value: AccountStatus.ON, label: '啟用' },
+  { value: AccountStatus.OFF, label: '停用' },
+]
 </script>
 
 <template>
   <!-- Backdrop -->
   <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
     @click.self="emit('close')"
   >
     <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
@@ -75,65 +88,67 @@ function handleSubmit(): void {
       </h2>
 
       <!-- API error from parent -->
-      <div v-if="error" class="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+      <div
+        v-if="error"
+        class="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600"
+      >
         {{ error }}
       </div>
 
-      <form @submit.prevent="handleSubmit">
-        <!-- Name -->
-        <div class="mb-4">
-          <label class="mb-1 block text-sm font-medium text-gray-700">姓名</label>
-          <input
-            v-model="form.name"
-            type="text"
-            placeholder="請輸入姓名"
-            class="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-blue-500"
-            :class="errors.name ? 'border-red-400 bg-red-50' : 'border-gray-300'"
-          />
-          <p v-if="errors.name" class="mt-1 text-xs text-red-500">{{ errors.name }}</p>
-        </div>
+      <form @submit.prevent="handleSubmit" class="space-y-4">
+        <!-- Name — uses BaseInput (defineModel) -->
+        <BaseInput
+          id="modal-name"
+          v-model="form.name"
+          label="姓名"
+          placeholder="請輸入姓名"
+          :error="errors.name"
+          :disabled="submitting"
+        />
 
-        <!-- Email -->
-        <div class="mb-4">
-          <label class="mb-1 block text-sm font-medium text-gray-700">Email</label>
-          <input
-            v-model="form.email"
-            type="email"
-            placeholder="example@email.com"
-            class="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-blue-500"
-            :class="errors.email ? 'border-red-400 bg-red-50' : 'border-gray-300'"
-          />
-          <p v-if="errors.email" class="mt-1 text-xs text-red-500">{{ errors.email }}</p>
-        </div>
+        <!-- Email — uses BaseInput (defineModel) -->
+        <BaseInput
+          id="modal-email"
+          v-model="form.email"
+          type="email"
+          label="Email"
+          placeholder="example@email.com"
+          :error="errors.email"
+          :disabled="submitting"
+        />
 
         <!-- Role Level -->
-        <div class="mb-4">
-          <label class="mb-1 block text-sm font-medium text-gray-700">角色</label>
+        <div>
+          <label for="modal-role" class="mb-1 block text-sm font-medium text-gray-700">角色</label>
           <select
+            id="modal-role"
             v-model="form.roleLevel"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            :disabled="submitting"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-50"
           >
-            <option :value="RoleLevel.ADMIN">Admin</option>
-            <option :value="RoleLevel.EDITOR">Editor</option>
-            <option :value="RoleLevel.USER">User</option>
-            <option :value="RoleLevel.CLIENT">Client</option>
+            <option v-for="opt in roleLevelOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
           </select>
         </div>
 
         <!-- Status -->
-        <div class="mb-6">
-          <label class="mb-1 block text-sm font-medium text-gray-700">狀態</label>
+        <div>
+          <label for="modal-status" class="mb-1 block text-sm font-medium text-gray-700">狀態</label>
           <select
+            id="modal-status"
             v-model="form.status"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            :disabled="submitting"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-50"
           >
-            <option :value="AccountStatus.ON">啟用</option>
-            <option :value="AccountStatus.OFF">停用</option>
+            <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
           </select>
         </div>
 
         <!-- Actions -->
-        <div class="flex justify-end gap-3">
+        <div class="flex justify-end gap-3 pt-2">
           <button
             type="button"
             @click="emit('close')"
@@ -145,7 +160,7 @@ function handleSubmit(): void {
           <button
             type="submit"
             :disabled="submitting"
-            class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {{ submitting ? '處理中...' : account ? '儲存' : '新增' }}
           </button>
