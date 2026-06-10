@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Account, AccountFormDto, AccountListQuery } from '@/types'
+import type { AccountFormDto, AccountListQuery } from '@/types'
 import { getAccounts, createAccount, updateAccount, deleteAccount } from '@/api'
 
 export const useAccountStore = defineStore('account', () => {
@@ -20,18 +20,17 @@ export const useAccountStore = defineStore('account', () => {
     }
   }
 
-  // mutation actions 不捕捉錯誤，由呼叫端（view）處理並顯示給使用者
-  async function addAccount(data: AccountFormDto): Promise<Account> {
-    const account = await createAccount(data)
-    accounts.value.push(account)
-    return account
+  // mutation actions 不捕捉錯誤，由呼叫端（view）處理並顯示給使用者。
+  // create / edit 後重新 fetch，確保顯示的是 server 回傳的完整資料，
+  // 避免因 API response schema 未定義而導致欄位對不上的問題。
+  async function addAccount(data: AccountFormDto): Promise<void> {
+    await createAccount(data)
+    await fetchAccounts()
   }
 
-  async function editAccount(id: string, data: AccountFormDto): Promise<Account> {
-    const account = await updateAccount(id, data)
-    const index = accounts.value.findIndex((a) => a.id === id)
-    if (index !== -1) accounts.value[index] = account
-    return account
+  async function editAccount(id: string, data: AccountFormDto): Promise<void> {
+    await updateAccount(id, data)
+    await fetchAccounts()
   }
 
   async function removeAccount(id: string): Promise<void> {

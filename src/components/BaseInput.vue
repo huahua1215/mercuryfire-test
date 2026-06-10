@@ -5,6 +5,7 @@ defineProps<{
   type?: string
   placeholder?: string
   label?: string
+  required?: boolean
   error?: string
   id?: string
   autocomplete?: string
@@ -14,8 +15,8 @@ defineProps<{
 
 <template>
   <div>
-    <label v-if="label" :for="id" class="mb-1 block text-sm font-medium text-gray-700">
-      {{ label }}
+    <label v-if="label" :for="id" class="mb-1 flex items-center gap-0.5 text-sm font-medium text-gray-700">
+      {{ label }}<span v-if="required" class="text-red-500">*</span>
     </label>
     <input
       :id="id"

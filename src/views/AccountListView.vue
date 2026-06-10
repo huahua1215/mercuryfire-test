@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore, useAccountStore } from '@/stores'
@@ -8,6 +8,7 @@ import StatsCard from '@/components/StatsCard.vue'
 import AccountCard from '@/components/AccountCard.vue'
 import SkeletonCard from '@/components/SkeletonCard.vue'
 import AccountFormModal from '@/components/AccountFormModal.vue'
+import ConfirmModal from '@/components/ConfirmModal.vue'
 import { useAccountSearch } from '@/composables'
 import type { Account, AccountFormDto } from '@/types'
 
@@ -18,17 +19,22 @@ const accountStore = useAccountStore()
 const { accounts, loading, error } = storeToRefs(accountStore)
 const { searchQuery, filteredAccounts, stats } = useAccountSearch(accounts)
 
-// ── modal ─────────────────────────────────────────────────────────────────────
+// ── form modal ────────────────────────────────────────────────────────────────
 const showModal = ref(false)
 const editingAccount = ref<Account | null>(null)
 const isModalSubmitting = ref(false)
 const modalError = ref<string | null>(null)
 
-// ── delete ────────────────────────────────────────────────────────────────────
+// ── delete confirm modal ──────────────────────────────────────────────────────
+const pendingDeleteId = ref<string | null>(null)
+const pendingDeleteName = computed(
+  () => accounts.value.find((a) => a.id === pendingDeleteId.value)?.name ?? '',
+)
 const deletingId = ref<string | null>(null)
 
 onMounted(() => accountStore.fetchAccounts())
 
+// ── form modal handlers ───────────────────────────────────────────────────────
 function openCreate(): void {
   editingAccount.value = null
   modalError.value = null
@@ -64,8 +70,15 @@ async function handleModalSubmit(data: AccountFormDto): Promise<void> {
   }
 }
 
-async function handleDelete(id: string): Promise<void> {
-  if (!confirm('確定要刪除此帳號？')) return
+// ── delete handlers ───────────────────────────────────────────────────────────
+function requestDelete(id: string): void {
+  pendingDeleteId.value = id
+}
+
+async function confirmDelete(): Promise<void> {
+  const id = pendingDeleteId.value
+  pendingDeleteId.value = null
+  if (!id) return
   deletingId.value = id
   try {
     await accountStore.removeAccount(id)
@@ -76,6 +89,10 @@ async function handleDelete(id: string): Promise<void> {
   }
 }
 
+function cancelDelete(): void {
+  pendingDeleteId.value = null
+}
+
 function handleLogout(): void {
   authStore.logout()
   router.push({ name: 'Login' })
@@ -83,41 +100,41 @@ function handleLogout(): void {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100">
+  <div class="min-h-screen bg-gray-50">
     <AppHeader @logout="handleLogout" />
 
-    <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+    <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
 
       <!-- Search + New button -->
-      <div class="mb-6 flex flex-col gap-3 sm:flex-row">
-        <div class="relative flex-1">
-          <svg
-            class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-          </svg>
+      <div class="mb-6 flex flex-col sm:flex-row gap-4">
+        <div class="flex-1 relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-400">
+              <path d="m21 21-4.34-4.34" />
+              <circle cx="11" cy="11" r="8" />
+            </svg>
+          </div>
           <input
             v-model="searchQuery"
             type="search"
             placeholder="搜尋帳號（姓名、郵件、角色）..."
-            class="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm outline-none transition focus:ring-2 focus:ring-indigo-400"
+            class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
           />
         </div>
         <button
           @click="openCreate"
-          class="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 active:bg-indigo-800 sm:w-auto"
+          class="flex font-bold items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition duration-200 whitespace-nowrap"
         >
-          <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+            <path d="M5 12h14" />
+            <path d="M12 5v14" />
           </svg>
           新增帳號
         </button>
       </div>
 
       <!-- Stats -->
-      <div class="mb-6 grid grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <StatsCard label="總帳號數" :value="stats.total" />
         <StatsCard label="啟用中" :value="stats.active" />
         <StatsCard label="已停用" :value="stats.inactive" />
@@ -131,7 +148,7 @@ function handleLogout(): void {
         {{ error }}
       </div>
 
-      <!-- Loading skeleton: 3 placeholder cards -->
+      <!-- Loading skeleton -->
       <div v-if="loading" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <SkeletonCard v-for="i in 3" :key="i" />
       </div>
@@ -151,14 +168,14 @@ function handleLogout(): void {
       </div>
 
       <!-- Account cards grid -->
-      <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         <AccountCard
           v-for="account in filteredAccounts"
           :key="account.id"
           :account="account"
           :deleting="deletingId === account.id"
           @edit="openEdit"
-          @delete="handleDelete"
+          @delete="requestDelete"
         />
       </div>
     </main>
@@ -172,5 +189,13 @@ function handleLogout(): void {
     :error="modalError"
     @close="closeModal"
     @submit="handleModalSubmit"
+  />
+
+  <!-- Delete confirmation modal -->
+  <ConfirmModal
+    v-if="pendingDeleteId"
+    :message="`確定要刪除帳號「${pendingDeleteName}」嗎？`"
+    @confirm="confirmDelete"
+    @cancel="cancelDelete"
   />
 </template>

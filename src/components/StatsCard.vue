@@ -6,8 +6,8 @@ defineProps<{
 </script>
 
 <template>
-  <div class="rounded-xl bg-white px-5 py-4 shadow-sm">
-    <p class="text-sm text-gray-500">{{ label }}</p>
-    <p class="mt-1 text-2xl font-bold text-gray-900">{{ value }}</p>
+  <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <p class="text-gray-600 mb-1">{{ label }}</p>
+    <p class="text-gray-900">{{ value }}</p>
   </div>
 </template>

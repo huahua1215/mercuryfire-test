@@ -47,8 +47,7 @@ http.interceptors.response.use(
     }
 
     const message =
-      serverMessage ??
-      (status ? (fallbackMap[status] ?? `請求失敗（${status}）`) : '網路連線異常')
+      serverMessage ?? (status ? (fallbackMap[status] ?? `請求失敗（${status}）`) : '網路連線異常')
 
     return Promise.reject(new Error(message))
   },
